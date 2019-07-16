@@ -1,38 +1,6 @@
+const Settings = require('./settings');
 const request = require('request');
-
-const url = 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=de2dd1f6-e382-44a0-a0e9-d28a8a823b37';
-
-const names = {
-    'laoge': '老哥',
-    'wenwen': '文文',
-    'kaikai': '凯凯',
-    'ouyang': '欧少',
-    'ke': '珂',
-    'angle': 'Angle',
-    'taylor': 'Taylor',
-    'jerry': 'Jerry',
-    'long': '阿龙'
-};
-
-const titles = [
-    '你真的太帅了！',
-    '你好棒棒呀！',
-    '你太棒啦！',
-    '你真帅!',
-    '你好骚啊！',
-    '今天真好看',
-];
-
-const phones = {
-    'laoge': '17721571606',
-    'wenwen': '15575858986',
-    'kaikai': '13782727312',
-    'ouyang': '18351037909',
-    'ke': '13003321248',
-    'angle': '17683150621',
-    'taylor': '18278220218',
-    'jerry': '17621623906'
-};
+const Consts = require('./constant');
 
 const goodWords = [
     '你端坐在那里，不怒而威，明德惟馨，乃世人典范。',
@@ -51,29 +19,43 @@ const goodWords = [
     '千寻万觅虽辛苦，海浪滔天；游遍文海终得金，破水之妙。',
 ];
 
-const send = (id) => {
-    const body = {
-        "msgtype": "text",
-        "text": {
-            "content" :`${names[id] || '兄弟'} ${titles[Math.floor(Math.random() * titles.length)]}` + "\n" +`${goodWords[Math.floor(Math.random() * goodWords.length)]}`,
-            "mentioned_mobile_list": [`${phones[id] || '@all'}`]
-        }
-    };
+const getBody = (callback) => {
+    const persons = Object.keys(Consts.friends);
+    const index = Math.floor(Math.random() * persons.length);
+    const person = Consts.friends[persons[index]];
     request({
-        method: 'POST',
+        method: 'GET',
         json: true,
-        url,
-        headers: {},
-        body
+        url: Settings.hitokoto,
+        headers: {}
     }, (err, response, body) => {
-        if (err) {
-            console.log(err);
-        } else {
-            console.log('舔狗成功');
-        }
+        return callback({
+            "msgtype": "text",
+            "text": {
+                "content" :`${body.hitokoto}  --${body.from} \n ${person.nickname || '兄弟'} 你今天${person.gender === 'male' ? '真帅！' : '真漂亮！'} \n群里的狗子们，快来夸夸${person.gender === 'male' ? '他' : '她'}吧！`,
+                "mentioned_mobile_list": [`${person.phone || '@all'}`]
+            }
+        })
     });
 };
-const ids = Object.keys(names);
-const index = Math.floor(Math.random() * ids.length);
-send(ids[index]);
+
+const send = () => {
+    getBody((body) => {
+        request({
+            method: 'POST',
+            json: true,
+            url: Settings.api_url,
+            headers: {},
+            body
+        }, (err, response, body) => {
+            if (err) {
+                console.log(err);
+            } else {
+                console.log('舔狗成功');
+            }
+        });
+    });
+};
+
+send();
 
